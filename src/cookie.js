@@ -43,54 +43,36 @@ const addButton = homeworkContainer.querySelector('#add-button');
 // таблица со списком cookie 
 const listTable = homeworkContainer.querySelector('#list-table tbody');
 
-let cookies = document.cookie, 
-    arr = [],
-    fragment = document.createDocumentFragment();
-
-cookies.split(';').forEach( (cookie) => arr.push(cookie.split('=')) )
-
-arr.map((el) => {
-  createRow(el);
-})
-
-listTable.appendChild(fragment);
+render()
 
 filterNameInput.addEventListener('keyup', function() {
     // здесь можно обработать нажатия на клавиши внутри текстового поля для фильтрации cookie
-    let term = filterNameInput.value.toUpperCase(),
-        rows = document.getElementsByClassName('rows');
-
-    for(var i=0; i<rows.length; i++) {
-      let name = rows[i].childNodes[0].textContent, 
-          value = rows[i].childNodes[1].textContent;
-      if(isMatching(name, term) || 
-        isMatching(value, term)) {
-          rows[i].style.display = 'table-row'
-      } else {
-        rows[i].style.display = 'none'
-      }
-    }
+   const filter = filterNameInput.value;
+   render(filter)
 });
 
 addButton.addEventListener('click', (e) => {
     // здесь можно обработать нажатие на кнопку "добавить cookie"
   e.preventDefault();
-  let newCookie = [addNameInput.value, addValueInput.value],
-      allrows = document.getElementsByClassName('rows');
   document.cookie = `${addNameInput.value}=${addValueInput.value}`;
   addNameInput.value = '';
   addValueInput.value = '';
-  for(var i=0; i<allrows.length; i++) {
-      let name = allrows[i].childNodes[0].textContent, 
-          value = allrows[i].childNodes[1].textContent;
-    if(isMatching(name, newCookie[0])) {
-      allrows[i].childNodes[1].textContent = newCookie[1];
-      return;
-    }    
-  }
-  createRow(newCookie);
-  listTable.appendChild(fragment);
+  render(filterNameInput.value)
 });
+
+function render(filter) {
+
+  listTable.innerHTML = '';
+  const newfilter =  filter || '';
+  let cookies = document.cookie.split(';').map((el) => {
+    return el.split('=')
+  })
+
+  cookies.map((el) => {
+    if(isMatching(el[0], newfilter) || isMatching(el[1], newfilter))
+    createRow(el[0], el[1]);
+  })
+}
 
 function isMatching(row, term) {
   let substring = term.toUpperCase(), 
@@ -98,26 +80,22 @@ function isMatching(row, term) {
   return string.includes(substring);
 }
 
-function createRow(el) {
-  let tr = document.createElement('tr'),
-      td_0 = document.createElement('td'),
-      td_1 = document.createElement('td'),
-      td_2 = document.createElement('td'),
-      button = document.createElement('button');
-  
-  td_2.appendChild(button)
-  tr.appendChild(td_0)
-  tr.appendChild(td_1)
-  tr.appendChild(td_2)
-  tr.classList.add('rows')
-  
-  td_0.innerText = el[0]
-  td_1.innerText = el[1]
-  button.textContent = 'Удалить'
-  button.addEventListener('click', () => {
-    let parentElement = button.parentNode.parentNode;
-    document.cookie = `${parentElement.childNodes[0].textContent} = ${parentElement.childNodes[1].textContent}; expires = ${new Date(-1)}`;
-    parentElement.remove();
+function createRow(name, value) {
+  const tr = document.createElement('tr');
+  const td1 = document.createElement('td');
+  const td2 = document.createElement('td');
+  const td3 = document.createElement('td');
+  const btn = document.createElement('button');
+  btn.textContent = "Удалить";
+  btn.addEventListener('click', () =>  {
+    document.cookie = `${name}=${value};expires=${new Date(new Date()-1000)}`;
+    btn.parentNode.parentNode.remove();
   });
-  fragment.appendChild(tr)
+  td1.textContent = name;
+  td2.textContent = value;
+  td3.appendChild(btn);
+  tr.appendChild(td1)
+  tr.appendChild(td2)
+  tr.appendChild(td3)
+  listTable.appendChild(tr)
 }
